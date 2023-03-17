@@ -1,3 +1,5 @@
-ComputerVision/*
+renv/*
 *.docx
 *.zip
+.idea/
+CV_Title.pdf
