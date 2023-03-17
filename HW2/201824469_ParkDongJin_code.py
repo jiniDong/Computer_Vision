@@ -45,34 +45,62 @@ print("sigma = 2.0\n{}".format(gauss1d(2.0)))
 def gauss2d(sigma):
     return np.outer(gauss1d(sigma), gauss1d(sigma))
 
+
 print("gauss2d(0.5) = \n{}".format(gauss2d(0.5)))
+
+
 # print("gauss2d(1.0) = \n{}".format(gauss2d(1.0)))
 
 
 def convolove2d(array, filter):
-    padding_width = len(filter)-1 # filter에 따른 padding 크기
-    zero_padding = np.zeros((np.shape(array)[0] + padding_width, np.shape(array)[1] + padding_width))
+    padding_width = int(len(filter) / 2)  # filter에 따른 padding 크기
+    zero_padding = np.zeros((np.shape(array)[0] + padding_width * 2, np.shape(array)[1] + padding_width * 2))
     # padding한 크기에 맞게 새로운 np.array를 생성
 
-    #convolution연산을 위해서 filter를 축의 방향에 대해서 뒤집는다.
+    # convolution연산을 위해서 filter를 축의 방향에 대해서 뒤집는다.
     flipped_filter = np.flip(filter, axis=0)
     flipped_filter = np.flip(flipped_filter, axis=1)
     # print(flipped_filter)
 
     # 모든 entry에 대해서 paading을 제외한 부분에 array를 집어넣어 준다.
-    for i in range(1, np.shape(zero_padding)[0]-1):
-        for j in range(1, np.shape(zero_padding)[1]-1):
-            zero_padding[i][j] = array[i-1][j-1]
+    for i in range(padding_width, np.shape(zero_padding)[0] - padding_width):
+        for j in range(padding_width, np.shape(zero_padding)[1] - padding_width):
+            zero_padding[i][j] = array[i - padding_width][j - padding_width]
 
-    # 각 pixel을 순회하면서 각 entry에 필터를 연산한다.
-    for i in range(1, np.shape(zero_padding)[0]-1):
-        for j in range(1, np.shape(zero_padding)[1]-1):
-            subpart = zero_padding[i-1:i+2, j-1:j+2]
+    # 각 pixel을 순회하면서 각 entry에 convolution한 값을 입력한다.
+    for i in range(padding_width, np.shape(zero_padding)[0] - padding_width):
+        for j in range(padding_width, np.shape(zero_padding)[1] - padding_width):
+            subpart = zero_padding[i - padding_width:i + padding_width + 1, j - padding_width:j + padding_width + 1]
             # print(subpart)
             # print(flipped_filter)
             zero_padding[i][j] = np.sum(subpart * flipped_filter)
     # print(zero_padding)
     # print(zero_padding[1:-1, 1:-1])
 
-    return zero_padding[1:-1, 1:-1]
+    return zero_padding[padding_width:-padding_width, padding_width:-padding_width]
+
+
+def gaussconvolve2d(array, sigma):
+    return convolove2d(array, gauss2d(sigma))
+
+
+x = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+# print("====x====")
+# print(x)
+# print('====1.0====')
+# print(gauss2d(1.0))
+# print('====result=====')
+# print(gaussconvolve2d(x, 1.0))
+
+
+
+dog_img = Image.open('hw2_image/2b_dog.bmp')
+dog_img = dog_img.convert('L')
+dog_img.show()
+dog_img_array = np.asarray(dog_img)
+# print(np.mean(dog_img_array))
+
+blurred_dog = Image.fromarray(gaussconvolve2d(dog_img_array, 3.0))
+blurred_dog.show()
 
