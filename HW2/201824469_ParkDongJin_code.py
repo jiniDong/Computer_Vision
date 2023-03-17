@@ -47,9 +47,7 @@ def gauss2d(sigma):
 
 
 print("gauss2d(0.5) = \n{}".format(gauss2d(0.5)))
-
-
-# print("gauss2d(1.0) = \n{}".format(gauss2d(1.0)))
+print("gauss2d(1.0) = \n{}".format(gauss2d(1.0)))
 
 
 def convolove2d(array, filter):
@@ -83,24 +81,22 @@ def convolove2d(array, filter):
 def gaussconvolve2d(array, sigma):
     return convolove2d(array, gauss2d(sigma))
 
-
-x = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-# print("====x====")
-# print(x)
-# print('====1.0====')
-# print(gauss2d(1.0))
-# print('====result=====')
-# print(gaussconvolve2d(x, 1.0))
-
-
-
+# 파일 불러오기 및 가우시안 효과 적용
 dog_img = Image.open('hw2_image/2b_dog.bmp')
-dog_img = dog_img.convert('L')
-dog_img.show()
-dog_img_array = np.asarray(dog_img)
-# print(np.mean(dog_img_array))
+dog_img_grey = dog_img.convert('L')
+dog_img_array = np.asarray(dog_img_grey)
+blurred_dog_array = np.asarray(gaussconvolve2d(dog_img_array, 3.0))
 
-blurred_dog = Image.fromarray(gaussconvolve2d(dog_img_array, 3.0))
-blurred_dog.show()
+# 두 개의 원본과 하나의 결과물 이미지 확인
+dog_img.show()
+dog_img_grey.show()
+Image.fromarray(blurred_dog_array).show()
+
+
+# edge_dog_array = dog_img_array - blurred_dog_array
+# sharpened_dog_image = dog_img_array + edge_dog_array
+# Image.fromarray(sharpened_dog_image).show()
+#
+# blurred_dog = Image.fromarray(gaussconvolve2d(dog_img_array, 3.0))
+# blurred_dog.show()
 
