@@ -74,6 +74,10 @@ def convolove2d(array, filter):
             subpart = zero_padding[i - padding_width:i + padding_width + 1,
                       j - padding_width:j + padding_width + 1]
             zero_padding[i][j] = np.sum(subpart * flipped_filter)
+    """
+    해당 부분에는 약간의 오류가 있습니다. convolve의 결과물은 다음 convolve에 영향을 주어서는 안되지만, 
+    이 코드는 영향을 주게 설계되었습니다. 고쳐진 코드는 HW3의 convolve
+    """
     # 컨벌루젼한 값을 리턴
     return zero_padding[padding_width:-padding_width, padding_width:-padding_width]
 
