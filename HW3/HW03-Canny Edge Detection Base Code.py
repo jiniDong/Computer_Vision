@@ -148,13 +148,21 @@ def non_max_suppression(G, theta):
     return res
 
 def double_thresholding(img):
+    diff = max(img) - min(img)
+    T_high = min(img) + diff * 0.15
+    T_low = min(img) + diff * 0.03
+
+    res = img[:]
+
+    img[img > T_high] = 255
+    img[T_high > img > T_low] = 80
+    img[T_low > img] = 0
     """ 
     Args:
         img: numpy array of shape (H, W) representing NMS edge response.
     Returns:
         res: double_thresholded image.
     """
-    pass
     return res
 
 def dfs(img, res, i, j, visited=[]):
@@ -172,6 +180,7 @@ def dfs(img, res, i, j, visited=[]):
                 dfs(img, res, ii, jj, visited)
 
 def hysteresis(img):
+    diff =
     """ Find weak edges connected to strong edges and link them.
     Iterate over each pixel in strong_edges and perform depth first
     search across the connected pixels in weak_edges to link them.
