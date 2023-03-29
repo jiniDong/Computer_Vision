@@ -57,28 +57,17 @@ def gaussconvolve2d(array, sigma):
     return convolve2d(array, gauss2d(sigma))
 
 #sobel연산을 위한 필터를 제작한다. normalization을 위해 8로 나눈다.
-x_sobel = np.array([ 1, 0, -1, 2, 0, -2, 1, 0, -1])
-y_sobel = np.array([ 1, 2, 1, 0, 0, 0, -1, -2, -1])
-x_sobel = x_sobel.reshape((3, 3))/8.0
-y_sobel = y_sobel.reshape((3, 3))/8.0
+X_SOBEL = np.array([1, 0, -1, 2, 0, -2, 1, 0, -1])
+Y_SOBEL = np.array([1, 2, 1, 0, 0, 0, -1, -2, -1])
+X_SOBEL = X_SOBEL.reshape((3, 3)) / 8.0
+Y_SOBEL = Y_SOBEL.reshape((3, 3)) / 8.0
 
 # 아래 상수는 divide by zero를 방지하기 위한 적당히 작은 수이다.
 QUITELY_SMALL = 0.00000000001
 def sobel_filters(img):
-    """ Returns gradient magnitude and direction of input img.
-    Args:
-        img: Grayscale image. Numpy array of shape (H, W).
-    Returns:
-        G: Magnitude of gradient at each pixel in img.
-            Numpy array of shape (H, W).
-        theta: Direction of gradient at each pixel in img.
-            Numpy array of shape (H, W).
-    Hints:
-        - Use np.hypot and np.arctan2 to calculate square root and arctan
-    """
     # x와 y의 방향에 대해서 각각 sobel 필터를 적용한다.
-    x_gradient_img = convolve2d(img, x_sobel)
-    y_gradient_img = convolve2d(img, y_sobel)
+    x_gradient_img = convolve2d(img, X_SOBEL)
+    y_gradient_img = convolve2d(img, Y_SOBEL)
 
     # G를 계산한다.
     G = np.hypot(x_gradient_img, y_gradient_img)
@@ -94,7 +83,17 @@ def sobel_filters(img):
     return (G, theta)
 
 def remain_max(array, x, y, angle):
-    # 각도에 따라서 각 픽셀에서 남길 만한 값을 제외하고는 제거한다.
+    """
+    그림 배열 array의 x(column), y(row)위치에서 angle에 따라 해당 픽셀에 할당되어야 하는 값을 반환한다.
+    할당되어야 하는 값이란 굵게 표시된 edge의 최댓값만을 남기기 위해 픽셀에 적용해야 하는 값이다.
+
+    :param array:적용할 이미지 배열
+    :param x:x값, 즉 column number
+    :param y:y값, 즉 row number
+    :param angle: 해당 픽셀에서의 gradient 방향
+    :return: 해당 픽셀에 최고 edge만을 남기기 위해서 적용되어야 하는 값,
+    해당 방향으로의 주변픽셀을 확인하여 자신이 최댓값일 경우 남기고 아닐 경우 0으로 치환
+    """
     ret = 0
     # -2|2 => 90도, 1 => 45도, 0 => 0도, -1 => 135도
     if angle == -2 or angle == 2:
@@ -120,15 +119,6 @@ def remain_max(array, x, y, angle):
     return ret
 
 def non_max_suppression(G, theta):
-    """ Performs non-maximum suppression.
-    This function performs non-maximum suppression along the direction
-    of gradient (theta) on the gradient magnitude image (G).
-    Args:
-        G: gradient magnitude image with shape of (H, W).
-        theta: direction of gradients with shape of (H, W).
-    Returns:
-        res: non-maxima suppressed image.
-    """
     # 라디안으로 들어온 theta를 각도로 변환시킨다.
     theta_degree = theta * 180 / np.pi
     # 변환된 각도를 0, 45, 90, 135중에서 가장 가까운 각도에 mapping시킨다.
@@ -147,22 +137,37 @@ def non_max_suppression(G, theta):
     # 결과를 반환한다.
     return res
 
+STRONG_EDGE_INTENSE = 255
+WEAK_EDGE_INTENSE = 80
+def apply_double_threshold(entry, T_high, T_low):
+    """
+    :param entry: Threshold 적용할 값
+    :param T_high: Strong Edge의 Threshold
+    :param T_low: Weak Edge의 Threshold
+    :return: Entry의 값을 보고, T_high보다 높으면 STRONG_EDGE_INTENSE,
+     T_low와 T_high사이이면 WEAK_EDGE_INTENSE,
+     T_low보다 작으면 0.
+    """
+    if entry >= T_high:
+        return STRONG_EDGE_INTENSE
+    elif T_high > entry >= T_low:
+        return WEAK_EDGE_INTENSE
+    else:
+        return 0
 def double_thresholding(img):
-    diff = max(img) - min(img)
-    T_high = min(img) + diff * 0.15
-    T_low = min(img) + diff * 0.03
+    # diff와 문제에서 제시된 threshold를 구한다.
+    diff = img.max()
+    T_high = img.min() + diff * 0.15
+    T_low = img.min() + diff * 0.03
 
+    # 결과를 기록하고 반환할 res 배열을 img에서 복사한다.
     res = img[:]
 
-    img[img > T_high] = 255
-    img[T_high > img > T_low] = 80
-    img[T_low > img] = 0
-    """ 
-    Args:
-        img: numpy array of shape (H, W) representing NMS edge response.
-    Returns:
-        res: double_thresholded image.
-    """
+    # 각 픽셀에 threshold를 적용한 값을 입력하기 위해 vectorize 생성 후 threshold 적용
+    vectorized_threshold = np.vectorize(apply_double_threshold)
+    res = vectorized_threshold(img, T_high, T_low)
+
+    # 완성된 결과를 반환
     return res
 
 def dfs(img, res, i, j, visited=[]):
@@ -180,19 +185,56 @@ def dfs(img, res, i, j, visited=[]):
                 dfs(img, res, ii, jj, visited)
 
 def hysteresis(img):
-    diff =
-    """ Find weak edges connected to strong edges and link them.
-    Iterate over each pixel in strong_edges and perform depth first
-    search across the connected pixels in weak_edges to link them.
-    Here we consider a pixel (a, b) is connected to a pixel (c, d)
-    if (a, b) is one of the eight neighboring pixels of (c, d).
-    Args:
-        img: numpy array of shape (H, W) representing NMS edge response.
-    Returns:
-        res: hysteresised image.
-    """
-    pass
+    # 반환할 배열을 생성
+    res = np.zeros(np.shape(img))
+    # 방문지 기록
+    visited = []
+    # 순회 인덱스를 찾기 위한 width, height 구하기
+    width = len(img)
+    height = len(img[0])
+
+    # 모든 픽셀(모서리는 out of range를 방어하기 위해 제외)을 순회하며
+    # strong edge에 대해서 dfs 수행
+    for i in range(1, width-1):
+        for j in range(1, height-1):
+            if img[i][j] == 255:
+                dfs(img, res, i, j, visited)
     return res
 
 
+#sobel연산을 위한 필터를 제작한다. normalization을 위해 8로 나눈다.
+x_sobel = np.array([ 1, 0, -1, 2, 0, -2, 1, 0, -1])
+y_sobel = np.array([ 1, 2, 1, 0, 0, 0, -1, -2, -1])
+x_sobel = x_sobel.reshape((3, 3))/8.0
+y_sobel = y_sobel.reshape((3, 3))/8.0
 
+def main():
+    # 1. noise reduction
+    # 이구아나 사진을 불러온다.
+    iguana_img = Image.open('iguana.bmp')
+    # 사진을 흑백처리한다.
+    iguana_img_grey = iguana_img.convert('L')
+    # 이미지를 np 배열형태로 변형한다.
+    iguana_array_grey = np.asarray(iguana_img_grey)
+    # 가우시안 필터 효과를 적용한다.
+    iguana_array_grey_blur = np.uint8(gaussconvolve2d(iguana_array_grey, 1.6))
+    # 배열을 이미지로 변경하여 보여준다.
+    Image.fromarray(iguana_array_grey_blur.astype(np.uint8)).show()
+
+    # 2. Finding the intensity gradient of image
+    mapped_sum_gradient_iguana, theta_iguana = sobel_filters(iguana_array_grey_blur)
+    Image.fromarray(mapped_sum_gradient_iguana.astype(np.uint8)).show()
+
+    # 3. Non-Maximum Suppression
+    non_max_suppressed_iguana = non_max_suppression(mapped_sum_gradient_iguana, theta_iguana)
+    Image.fromarray(non_max_suppressed_iguana.astype(np.uint8)).show()
+
+    # 4. Double threshold
+    double_threshold_iguana = double_thresholding(non_max_suppressed_iguana)
+    Image.fromarray(double_threshold_iguana.astype(np.uint8)).show()
+
+    # 5. Edge Tracking by hysteresis
+    hysteresised = hysteresis(double_threshold_iguana)
+    Image.fromarray(hysteresised.astype(np.uint8)).show()
+
+main()
