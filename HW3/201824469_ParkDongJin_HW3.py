@@ -137,6 +137,7 @@ def non_max_suppression(G, theta):
     # 결과를 반환한다.
     return res
 
+#
 STRONG_EDGE_INTENSE = 255
 WEAK_EDGE_INTENSE = 80
 def apply_double_threshold(entry, T_high, T_low):
