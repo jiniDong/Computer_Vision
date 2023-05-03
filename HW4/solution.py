@@ -30,12 +30,35 @@ def RANSACFilter(
     assert isinstance(orient_agreement, float)
     assert isinstance(scale_agreement, float)
     ## START
-
+    largest_set = []
+    for i in range(10):  # repeat ten times
+        rand = random.randrange(0, len(matched_pairs))  # generate random number
+        choice = matched_pairs[rand]
+        orientation = (keypoints1[choice[0]][3] - keypoints2[choice[1]][3]) % (
+                2 * math.pi)  # calculation first-orientation
+        scale = keypoints2[choice[1]][2] / keypoints1[choice[0]][2]  # calculation first-scale ratio
+        temp = []
+        for j in range(len(matched_pairs)):  # calculate the number of all cases
+            if j is not rand:
+                # calculation second-orientation
+                orientation_temp = (keypoints1[matched_pairs[j][0]][3] - keypoints2[matched_pairs[j][1]][3]) % (
+                        2 * math.pi)
+                # calculation second-scale-ratio
+                scale_temp = keypoints2[matched_pairs[j][1]][2] / keypoints1[matched_pairs[j][0]][2]
+                # check degree error +=30degree
+                if ((orientation - math.pi / 6) < orientation_temp) and (
+                        orientation_temp < (orientation + math.pi / 6)):
+                    # check scale error +- 50%
+                    if scale - scale * scale_agreement < scale_temp < scale + scale * scale_agreement:
+                        temp.append([i, j])
+        if len(temp) > len(largest_set):
+            largest_set = temp
+    for i in range(len(largest_set)):
+        largest_set[i] = (matched_pairs[largest_set[i][1]][0], matched_pairs[largest_set[i][1]][1])
 
     ## END
     assert isinstance(largest_set, list)
     return largest_set
-
 
 
 def FindBestMatches(descriptors1, descriptors2, threshold):
@@ -58,8 +81,17 @@ def FindBestMatches(descriptors1, descriptors2, threshold):
     assert isinstance(threshold, float)
     ## START
     ## the following is just a placeholder to show you the output format
-    num = 5
-    matched_pairs = [[i, i] for i in range(num)]
+    y1 = descriptors1.shape[0]  # 해당 코드는 descriptor1 의 요소들을 순회하기 위해서 필요함
+    y2 = descriptors2.shape[1]  # 해당 코드는 descriptor2 의 요소들을 순회하기 위해서 필요함
+    temp = np.zeros(y2)
+    matched_pairs = []
+
+    for i1 in range(y1):
+        for i2 in range(y2):
+            temp[i2] = math.acos(np.dot(descriptors1[i1], descriptors2[i2]))
+        compare = sorted(range(len(temp)), key=lambda k: temp[k])
+        if (temp[compare[0]] / temp[compare[1]]) < threshold:
+            matched_pairs.append([i1, compare[0]])
     ## END
     return matched_pairs
 
@@ -84,6 +116,7 @@ def KeypointProjection(xy_points, h):
 
     # END
     return xy_points_out
+
 
 def RANSACHomography(xy_src, xy_ref, num_iter, tol):
     """
@@ -110,11 +143,9 @@ def RANSACHomography(xy_src, xy_ref, num_iter, tol):
     assert xy_src.shape[1] == 2
     assert isinstance(num_iter, int)
     assert isinstance(tol, (int, float))
-    tol = tol*1.0
+    tol = tol * 1.0
 
     # START
-
-
 
     # END
     assert isinstance(h, np.ndarray)
