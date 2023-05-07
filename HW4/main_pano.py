@@ -45,13 +45,19 @@ def create_pano(
 
 
 def main():
-    canvas_height = 600
-    canvas_width = 1000
-    image_list = ['Rainier1', 'Rainier2', 'Rainier3','Rainier4','Rainier5','Rainier6']
-
-    num_iter = 50
-    tol = 10
-    ratio_thres = 0.9
+    # 진행 중에 사이즈가 맞지 않는다면 사이즈를 키우면 된다.
+    canvas_height = 1200
+    canvas_width = 1600
+    # 사용할 이미지
+    # image_list = ['Rainier1', 'Rainier2', 'Rainier3','Rainier4','Rainier5','Rainier6']
+    # image_list = ['Hanging1', 'Hanging2']
+    # image_list = ['garden0', 'garden3', 'garden4']
+    # image_list = ['fountain4', 'fountain0']
+    image_list = ['irving_out3', 'irving_out6', 'irving_out5']
+    # 이 부분은 사용자 마음대로 지정
+    num_iter = 2000
+    tol = 25
+    ratio_thres = 0.90
     image_list = [op.join(path, im) for im in image_list]
     create_pano(image_list, ratio_thres, canvas_height, canvas_width,
                 num_iter, tol, figsize=(20, 20))

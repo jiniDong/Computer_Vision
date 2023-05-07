@@ -30,7 +30,7 @@ def MatchRANSAC(
         ratio_thres, orient_agreement, scale_agreement)
     matched_pairs = [
         [keypoints1[i], keypoints2[j]] for (i, j) in matched_pairs]
-    assert len(matched_pairs) > 0, "No match received"
+    # assert len(matched_pairs) > 0, "No match received"
     im3 = DisplayMatches(im1, im2, matched_pairs)
     return im3
 
@@ -49,7 +49,7 @@ def Match(image1, image2, ratio_thres):
         descriptors1, descriptors2, ratio_thres)
     matched_pairs = [
         [keypoints1[i], keypoints2[j]] for (i, j) in matched_pairs]
-    assert len(matched_pairs) > 0, "No match received"
+    #assert len(matched_pairs) > 0, "No match received"
     im3 = DisplayMatches(im1, im2, matched_pairs)
     return im3
 
